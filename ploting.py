@@ -1,14 +1,5 @@
 import matplotlib.pyplot as plt
 
-def plot_malicious_rates(counters, rates):
-    plt.figure(figsize=(10, 6))
-    plt.plot(counters, rates, marker='o', linestyle='-', color='r')
-    plt.title("Rate of Malicious Nodes in Views Over Time")
-    plt.xlabel("Counter")
-    plt.ylabel("Rate of Malicious Nodes (%)")
-    plt.grid(True)
-    plt.show()
-
 def read_malicious_rates(file_path):
     counters = []
     rates = []
@@ -29,6 +20,7 @@ def plot_malicious_rates(counters, rates):
     # Sauvegardez le graphique au lieu de l'afficher
     plt.savefig("/mnt/c/Users/LENOVO/Desktop/Projet S8/tests/malicious_rates_plot.png")
     plt.show()
+
 
 file_path = "rates.txt"  # Assurez-vous que le chemin correspond à votre fichier de données
 

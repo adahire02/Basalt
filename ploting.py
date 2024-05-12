@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import config
 
 def read_malicious_rates(file_path):
     counters = []
@@ -18,11 +19,11 @@ def plot_malicious_rates(counters, rates):
     plt.ylabel("Rate of Malicious Nodes (%)")
     plt.grid(True)
     # Sauvegardez le graphique au lieu de l'afficher
-    plt.savefig("/mnt/c/Users/LENOVO/Desktop/Projet S8/tests/malicious_rates_plot.png")
+    plt.savefig("/mnt/c/Users/LENOVO/Desktop/Projet S8/tests/malicious_rates_plot_350.png")
     plt.show()
 
 
-file_path = "rates.txt"  # Assurez-vous que le chemin correspond à votre fichier de données
+file_path = f"mal{config.biz_nodes}_vue{config.view_size}.txt"  # Assurez-vous que le chemin correspond à votre fichier de données
 
 # Lire les données
 counters, rates = read_malicious_rates(file_path)

@@ -3,7 +3,7 @@ import random
 import hashlib
 import ipaddress
 import sys
-
+import config
 # Initialize Pygame
 pygame.init()
 
@@ -19,14 +19,16 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0,0,255)
 
+"""
 # Parameters
-network_size = 1000
-view_size = 16
+config.network_size = 1000
+config.view_size = 16
 rounds = 100
 attack_force = 1
-k_rho = int(view_size//2)
+config.k_rho = int(config.view_size//2)
 rho = 0.5
-
+biz_nodes = 350 
+"""
 # Font for text
 font = pygame.font.Font(None, 24)
 
@@ -51,8 +53,8 @@ class Node:
         self.neighbors = []
         self.pull_list = []
         self.push_list = []
-        self.seeds = [1]*view_size
-        self.hits = [1]*view_size
+        self.seeds = [1]*config.view_size
+        self.hits = [1]*config.view_size
         self.view_received = []
         self.is_malicious = False
 
@@ -63,7 +65,7 @@ class Node:
 
     def select_peer_for_communication(self):
         min_hits_index = self.hits.index(min(self.hits))
-        if min_hits_index < view_size:
+        if min_hits_index < config.view_size:
             selected_peer = self.neighbors[min_hits_index]
             self.hits[min_hits_index] += 1
         else : 
@@ -93,7 +95,7 @@ class Node:
         neighbor.push_list.append(self.ip)
 
     def send_push_malicious(self,neighbor,malicious_list):
-        list_to_send = random.sample(malicious_list, view_size)
+        list_to_send = random.sample(malicious_list, config.view_size)
         neighbor.view_received += list_to_send
 
     def select_peers_for_communication_malicious(self, attack_force):
@@ -108,7 +110,7 @@ class Node:
         new_neighbor_list = []
         i = 0
         if self.view_received :
-            for node in self.view_received and i < view_size:
+            for node in self.view_received and i < config.view_size:
                 if node not in self.neighbors and not node.is_malicious :
                     new_neighbor_list.append(node)
                     i+=1
@@ -117,14 +119,14 @@ class Node:
     """def respond_push_received_and_pull_requested_malicious(self):
         new_neighbor_list = []
         i = 0
-        # Ensure self.view_received is iterable and i < view_size
+        # Ensure self.view_received is iterable and i < config.view_size
         for node in self.view_received:
-            if i < view_size:
+            if i < config.view_size:
                 if node not in self.neighbors and not node.is_malicious:
                     new_neighbor_list.append(node)
                     i += 1  # increment i only when a node is added
             else:
-                break  # exit the loop once i reaches view_size
+                break  # exit the loop once i reaches config.view_size
         self.neighbors = new_neighbor_list
         self.view_received.clear() """
     
@@ -132,29 +134,29 @@ class Node:
         new_neighbor_list = []
         i = 0
         list_to_choose_from = set(self.view_received+self.neighbors)
-        # Ensure self.view_received is iterable and i < view_size
-        new_neighbor_list = random.sample(list_to_choose_from, view_size)
+        # Ensure self.view_received is iterable and i < config.view_size
+        new_neighbor_list = random.sample(list_to_choose_from, config.view_size)
         self.neighbors = new_neighbor_list
         self.view_received.clear() 
 
     def respond_pull_requests_malicious(self,malicious_list):
-        if len(malicious_list) < view_size:
+        if len(malicious_list) < config.view_size:
             print("Not enough malicious nodes to sample from.")
             return
-        list_to_send = random.sample(malicious_list, view_size)
+        list_to_send = random.sample(malicious_list, config.view_size)
         for node in self.pull_list :
             node.view_received += list_to_send
 
     def add_neighbor(self, neighbor):
-        if neighbor not in self.neighbors and neighbor != self and len(self.neighbors) < view_size:
+        if neighbor not in self.neighbors and neighbor != self and len(self.neighbors) < config.view_size:
             self.neighbors.append(neighbor)
 
     def update_seeds(self,indice):
         list_new_neighbors = self.neighbors
-        indice = indice % view_size
-        indices_to_update = list(range(int(indice),int(indice+k_rho)))
+        indice = indice % config.view_size
+        indices_to_update = list(range(int(indice),int(indice+config.k_rho)))
         new_neighbors = []  # Préparer une nouvelle liste de voisins
-        for seed_index in range(view_size):
+        for seed_index in range(config.view_size):
             if seed_index in indices_to_update:
                 self.seeds[seed_index] = random.getrandbits(256)
             # Trier les voisins actuels basés sur le nouveau hachage et prendre le meilleur
@@ -167,7 +169,7 @@ class Node:
     """def update_seeds(self):
         list_new_neighbors = self.neighbors
         new_neighbors = []  # Préparer une nouvelle liste de voisins
-        for seed_index in range(view_size):  # Supposons que vous voulez maintenir 4 voisins basés sur le hachage
+        for seed_index in range(config.view_size):  # Supposons que vous voulez maintenir 4 voisins basés sur le hachage
             self.seeds[seed_index] = random.getrandbits(256)
             # Trier les voisins actuels basés sur le nouveau hachage et prendre le meilleur
             sorted_neighbors = sorted(list_new_neighbors, key=lambda n: hierarchical_hash(self.seeds[seed_index], n.ip))
@@ -182,7 +184,7 @@ class Node:
         potential_new_neighbors = set(self.view_received + self.neighbors)
         
         new_neighbors_list = []
-        for i in range(view_size):  # Assumant '5' comme la taille de la vue désirée
+        for i in range(config.view_size):  # Assumant '5' comme la taille de la vue désirée
             potential_new_neighbors_sorted = sorted(
                 list(potential_new_neighbors),
                 key=lambda n: hash_ip(self.seeds[i], n.ip)
@@ -208,10 +210,13 @@ class Node:
             print("Node is not malicious")
             return
         
-        for _ in range(100): #int(0.1*network_size)):
+        for _ in range(config.biz_nodes): #int(0.1*config.network_size)):
             # Generate a new IP with the same prefix as this node
-            ip_prefix = ".".join(self.ip.split(".")[:3])
-            new_ip = f"{ip_prefix}.{random.randint(0, 255)}"
+            """ip_prefix = ".".join(self.ip.split(".")[:3])
+            new_ip = f"{ip_prefix}.{random.randint(0, 255)}"""
+            ip_prefix = ".".join(self.ip.split(".")[:2])
+            # Generate the last two octets (16 bits) randomly
+            new_ip = f"{ip_prefix}.{random.randint(0, 255)}.{random.randint(0, 255)}"
             x = random.randint(50, WIDTH - 50)
             y = random.randint(50, HEIGHT - 50)
             new_node = Node(new_ip, x, y)
@@ -296,7 +301,7 @@ def create_basic_node():
     x = random.randint(50, WIDTH - 50)
     y = random.randint(50, HEIGHT - 50)
     new_node = Node(ip, x, y)
-    new_node.hits = [1]*view_size
+    new_node.hits = [1]*config.view_size
     nodes.append(new_node)
 
 def main():
@@ -313,9 +318,9 @@ def main():
                 running = False
 
         if phase == 1:
-            if len(nodes) < network_size:
+            if len(nodes) < config.network_size:
                 create_basic_node()
-                if len(nodes) == network_size:  # Transition immédiate à la phase 2
+                if len(nodes) == config.network_size:  # Transition immédiate à la phase 2
                     malicious_ips = [nodes[0].ip]# for node in nodes[:10]]
                     phase = 2
                     last_share_time = current_time  # Réinitialiser le suivi du temps pour le partage
@@ -327,17 +332,17 @@ def main():
         elif phase == 2:
             if current_time - last_share_time > 2000:  # 5 secondes ont passé
                 for node in nodes : 
-                    if len(node.neighbors) < view_size :
+                    if len(node.neighbors) < config.view_size :
                         node.add_neighbor(random.choice(nodes))
                     """else :
-                        for i in range(1,view_size):
-                            if len(node.neighbors) < view_size -2 :
+                        for i in range(1,config.view_size):
+                            if len(node.neighbors) < config.view_size -2 :
                                 node.add_neighbor(random.choice(malicious_node_list))
                         node.add_neighbor(random.choice(nodes))
                         node.add_neighbor(random.choice(nodes))"""
                 all_have_five_neighbors = True  # On suppose d'abord que tous les nœuds ont exactement 5 voisins
                 for node in nodes:
-                    if len(node.neighbors) != view_size:
+                    if len(node.neighbors) != config.view_size:
                         all_have_five_neighbors = False
                 if all_have_five_neighbors :
                     phase = 3
@@ -352,7 +357,7 @@ def main():
             for node in nodes:
                     if not node.is_malicious :
                         node.update_seeds(indice)
-            indice += int(counter*k_rho)
+            indice += int(counter*config.k_rho)
             # Logique de mise à jour des vues pour chaque nœud
             for node in nodes:
                 if node.ip not in malicious_ips :
@@ -367,25 +372,25 @@ def main():
                 else :
                     if node.neighbors:
                         #Comportement noeud malveillant
-                        pull_selected_nodes = node.select_peers_for_communication_malicious(attack_force)
+                        pull_selected_nodes = node.select_peers_for_communication_malicious(config.attack_force)
                         for selected in pull_selected_nodes :
                             node.send_pull_request(selected)
-                        push_selected_node = node.select_peers_for_communication_malicious(attack_force)
+                        push_selected_node = node.select_peers_for_communication_malicious(config.attack_force)
                         for selected in pull_selected_nodes :
                             node.send_push_request(selected)
                         node.respond_push_received_and_pull_requested_malicious()
                         node.respond_pull_requests_malicious(malicious_node_list)    
-            total_views = sum(len(node.neighbors) for node in nodes[:network_size])
-            malicious_views = sum(1 for node in nodes[:network_size] for view in node.neighbors if view.ip in malicious_ips)
+            total_views = sum(len(node.neighbors) for node in nodes[:config.network_size])
+            malicious_views = sum(1 for node in nodes[:config.network_size] for view in node.neighbors if view.ip in malicious_ips)
             if total_views > 0:
                 malicious_rate = (malicious_views / total_views) * 100
                 #print(f"Counter {counter}: Taux de nœuds malveillants dans les vues : {malicious_rate:.2f}%")
                 if counter == 1 :
-                    save_malicious_rates("rates.txt", counter, malicious_rate)
+                    save_malicious_rates(f"mal{config.biz_nodes}_vue{config.view_size}.txt", counter, malicious_rate)
                 else :
-                    save_malicious_rates_append("rates.txt", counter, malicious_rate)
+                    save_malicious_rates_append(f"mal{config.biz_nodes}_vue{config.view_size}.txt", counter, malicious_rate)
 
-            if counter >= rounds:
+            if counter >= config.rounds:
                 running = False  # Arrêter la boucle principale après 50 mises à jour
 
         # Dessiner le graphe
